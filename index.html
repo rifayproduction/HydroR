@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Hydro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <h1 class="brand-title">Hydro</h1>
+    </section>
+
+    <div class="view-stack">
+      <section class="screen-panel screen-today active" data-view-panel="today">
+        <div class="drop-stage" aria-label="Прогресс воды за день">
+          <div class="drop-wrap" id="dropWrap">
+            <div class="drop">
+              <svg class="drop-svg" viewBox="0 0 240 320" aria-hidden="true" focusable="false">
+            <defs>
+              <clipPath id="dropClip">
+                <path d="M120 18C146 73 206 122 211 189C217 269 161 309 120 309C76 309 23 270 29 189C34 123 95 72 120 18Z" />
+              </clipPath>
+              <linearGradient id="glassGradient" x1="56" y1="34" x2="189" y2="288" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#f3fdff" stop-opacity="0.82" />
+                <stop offset="0.28" stop-color="#9ae9ff" stop-opacity="0.2" />
+                <stop offset="0.7" stop-color="#235372" stop-opacity="0.16" />
+                <stop offset="1" stop-color="#061b2a" stop-opacity="0.34" />
+              </linearGradient>
+              <linearGradient id="waterGradient" x1="69" y1="60" x2="171" y2="316" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#aaf5ff" />
+                <stop offset="0.3" stop-color="#5bd8ff" />
+                <stop offset="0.68" stop-color="#24a8ed" />
+                <stop offset="1" stop-color="#116bb6" />
+              </linearGradient>
+              <linearGradient id="edgeGradient" x1="50" y1="24" x2="191" y2="296" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#ffffff" stop-opacity="0.86" />
+                <stop offset="0.38" stop-color="#a8edff" stop-opacity="0.56" />
+                <stop offset="1" stop-color="#4ac6f5" stop-opacity="0.22" />
+              </linearGradient>
+              <radialGradient id="bottomGlow" cx="54%" cy="78%" r="58%">
+                <stop offset="0" stop-color="#baf5ff" stop-opacity="0.32" />
+                <stop offset="1" stop-color="#1a8ed0" stop-opacity="0" />
+              </radialGradient>
+            </defs>
+
+            <g clip-path="url(#dropClip)">
+              <rect class="drop-glass" width="240" height="320" />
+              <g class="water-layer" id="waterLevel">
+                <rect class="water-fill" x="-24" y="0" width="288" height="340" />
+                <path class="water-wave water-wave-one" d="M-24 5C9 -10 41 22 75 6C112 -12 142 24 178 7C209 -8 237 8 264 -1V46H-24Z" />
+                <path class="water-wave water-wave-two" d="M-24 16C14 0 43 27 82 13C122 -2 151 29 191 12C221 0 242 10 264 3V56H-24Z" />
+              </g>
+              <rect class="drop-depth" width="240" height="320" />
+              <path class="inner-edge-left" d="M61 203C59 150 91 97 119 35" />
+              <path class="inner-edge-right" d="M183 219C184 159 153 98 122 35" />
+              <ellipse class="drop-bottom-glow" cx="124" cy="245" rx="82" ry="58" />
+              <circle class="bubble bubble-one" cx="78" cy="238" r="5" />
+              <circle class="bubble bubble-two" cx="104" cy="268" r="3" />
+              <circle class="bubble bubble-three" cx="153" cy="226" r="4" />
+              <circle class="burst-bubble burst-one" cx="88" cy="250" r="4" />
+              <circle class="burst-bubble burst-two" cx="112" cy="266" r="3" />
+              <circle class="burst-bubble burst-three" cx="139" cy="242" r="4.5" />
+              <circle class="burst-bubble burst-four" cx="164" cy="260" r="3.5" />
+            </g>
+
+            <path class="drop-outline" d="M120 18C146 73 206 122 211 189C217 269 161 309 120 309C76 309 23 270 29 189C34 123 95 72 120 18Z" />
+            <path class="drop-rim" d="M120 33C143 82 194 128 199 190C205 260 157 295 120 295C82 295 39 260 43 191C47 132 97 87 120 33Z" />
+            <path class="drop-highlight-main" d="M100 62C80 105 67 146 63 190" />
+            <path class="drop-highlight-thin" d="M87 77C72 115 62 153 60 190" />
+            <path class="drop-highlight-small" d="M130 55C154 91 177 130 186 170" />
+              </svg>
+              <div class="drop-content">
+                <strong id="cupsCount">0 из 10</strong>
+                <span>кружек</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="progress-copy">
+            <strong id="waterAmount">0 / 3000 мл</strong>
+            <span id="statusText">Начнем спокойно</span>
+          </div>
+
+          <div class="cup-dots" id="cupDots" aria-label="Кружки за день"></div>
+          <div class="dev-controls" aria-label="Временное управление водой">
+            <button id="undoButton" type="button" aria-label="Убрать 300 мл">-</button>
+            <button id="addCupButton" type="button" aria-label="Добавить 300 мл">+</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen-panel screen-stats" data-view-panel="stats" hidden>
+        <div class="water-card">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M5 19V9" />
+              <path d="M12 19V5" />
+              <path d="M19 19v-7" />
+            </svg>
+          </span>
+          <strong>Статистика</strong>
+          <span>Здесь будет календарь с каплями по дням</span>
+        </div>
+      </section>
+
+      <section class="screen-panel screen-settings" data-view-panel="settings" hidden>
+        <div class="settings-panel">
+          <div class="settings-head">
+            <span class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
+                <path d="M6.5 6.5c3.2-2.2 7.8-2.2 11 0" />
+                <path d="M6.5 17.5c3.2 2.2 7.8 2.2 11 0" />
+              </svg>
+            </span>
+            <div>
+              <strong>Настройки</strong>
+              <span>Подстрой Hydro под свою кружку</span>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-title">
+              <span>Норма дня</span>
+              <small id="goalValue">3000 мл</small>
+            </div>
+            <div class="liquid-options" id="goalOptions">
+              <button type="button" data-goal="1500">1.5 л</button>
+              <button type="button" data-goal="2000">2 л</button>
+              <button type="button" data-goal="2500">2.5 л</button>
+              <button type="button" data-goal="3000">3 л</button>
+              <button type="button" data-goal="3500">3.5 л</button>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <div class="setting-title">
+              <span>Кружка</span>
+              <small id="cupValue">300 мл</small>
+            </div>
+            <div class="liquid-options compact" id="cupOptions">
+              <button type="button" data-cup-size="200">200</button>
+              <button type="button" data-cup-size="250">250</button>
+              <button type="button" data-cup-size="300">300</button>
+              <button type="button" data-cup-size="500">500</button>
+            </div>
+          </div>
+
+          <button class="reset-day-button" id="resetDayButton" type="button">Сбросить сегодняшний прогресс</button>
+        </div>
+        <div class="water-card">
+          <span class="card-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M12 21s6-4.1 6-10a6 6 0 0 0-12 0c0 5.9 6 10 6 10Z" />
+              <path d="M12 13.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+            </svg>
+          </span>
+          <strong>Настройки</strong>
+          <span>Позже настроим норму дня и объем кружки</span>
+        </div>
+      </section>
+    </div>
+
+    <nav class="wave-nav" aria-label="Навигация Hydro">
+      <div class="wave-shell">
+        <button class="wave-tab active" type="button" data-view="today" aria-label="Капля">
+          <span class="wave-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M12 3.2C14.6 7.7 18 10.8 18 15a6 6 0 0 1-12 0c0-4.2 3.4-7.3 6-11.8Z" />
+              <path d="M9.2 15.3c0 1.45 1.15 2.7 2.8 2.7" />
+              <path d="M9.7 10.6c.65-1.12 1.45-2.18 2.3-3.5" />
+            </svg>
+          </span>
+          <span>Капля</span>
+        </button>
+        <button class="wave-tab" type="button" data-view="stats" aria-label="Статистика">
+          <span class="wave-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M5 19V9" />
+              <path d="M12 19V5" />
+              <path d="M19 19v-7" />
+            </svg>
+          </span>
+          <span>Статистика</span>
+        </button>
+        <button class="wave-tab" type="button" data-view="settings" aria-label="Настройки">
+          <span class="wave-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M5 7h14" />
+              <path d="M5 17h14" />
+              <path d="M8.5 11.8C9.9 14 12 15.8 12 18a3.5 3.5 0 0 1-7 0c0-2.2 2.1-4 3.5-6.2Z" />
+              <path d="M16.2 3.8C17.3 5.6 19 7.1 19 8.9a2.8 2.8 0 0 1-5.6 0c0-1.8 1.7-3.3 2.8-5.1Z" />
+            </svg>
+          </span>
+          <span>Настройки</span>
+        </button>
+      </div>
+    </nav>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
