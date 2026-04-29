@@ -115,6 +115,8 @@ function animateDrop() {
 }
 
 function setView(viewName) {
+  document.body.dataset.view = viewName;
+
   viewPanels.forEach((panel) => {
     const isActive = panel.dataset.viewPanel === viewName;
     panel.hidden = !isActive;
