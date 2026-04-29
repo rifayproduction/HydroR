@@ -7,11 +7,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="preload" as="image" href="assets/hydro-bg-drop.webp" type="image/webp">
+  <link rel="stylesheet" href="styles.css?v=8">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body data-view="today">
   <main class="app-shell">
+    <button class="streak-badge muted" id="streakBadge" type="button" aria-label="Серия дней">
+      <span class="streak-ring" aria-hidden="true">
+        <span class="streak-drop"></span>
+      </span>
+      <strong id="streakCount">0</strong>
+    </button>
+
     <section class="hero">
       <h1 class="brand-title">Hydro</h1>
     </section>
@@ -88,14 +96,47 @@
           </div>
 
           <div class="cup-dots" id="cupDots" aria-label="Кружки за день"></div>
-          <div class="dev-controls" aria-label="Временное управление водой">
-            <button id="undoButton" type="button" aria-label="Убрать 300 мл">-</button>
-            <button id="addCupButton" type="button" aria-label="Добавить 300 мл">+</button>
+          <div class="drink-controls" aria-label="Управление водой">
+            <button class="undo-water-button" id="undoButton" type="button" aria-label="Убрать одну кружку">-</button>
+            <button class="add-water-button" id="addCupButton" type="button" aria-label="Добавить кружку">
+              <strong>+300 мл</strong>
+              <span>Добавить кружку</span>
+            </button>
           </div>
         </div>
       </section>
 
       <section class="screen-panel screen-stats" data-view-panel="stats" hidden>
+        <div class="stats-panel">
+          <div class="stats-head">
+            <div>
+              <strong id="statsMonthTitle">Месяц</strong>
+              <span>Каждый день - отдельная капля</span>
+            </div>
+            <small id="statsMonthSummary">0 дней</small>
+          </div>
+
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>Пн</span>
+            <span>Вт</span>
+            <span>Ср</span>
+            <span>Чт</span>
+            <span>Пт</span>
+            <span>Сб</span>
+            <span>Вс</span>
+          </div>
+          <div class="calendar-grid" id="calendarGrid" aria-label="Календарь воды"></div>
+
+          <div class="selected-day-card" id="selectedDayCard">
+            <span id="selectedDayDate">Сегодня</span>
+            <strong id="selectedDayAmount">0 / 3000 мл</strong>
+            <small id="selectedDayCups">0 кружек</small>
+          </div>
+          <div class="month-controls" aria-label="Переключение месяца">
+            <button class="month-arrow month-prev" id="prevMonthButton" type="button" aria-label="Предыдущий месяц">&lt;</button>
+            <button class="month-arrow month-next" id="nextMonthButton" type="button" aria-label="Следующий месяц">&gt;</button>
+          </div>
+        </div>
         <div class="water-card">
           <span class="card-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false">
@@ -205,6 +246,6 @@
     </nav>
   </main>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
