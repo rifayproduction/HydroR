@@ -1,4 +1,25 @@
-const tg = window.Telegram?.WebApp;
+let tg = window.Telegram?.WebApp || null;
+let telegramInitialized = false;
+
+function initTelegramWebApp() {
+  const webApp = window.Telegram?.WebApp;
+
+  if (!webApp) {
+    return;
+  }
+
+  tg = webApp;
+
+  if (telegramInitialized) {
+    return;
+  }
+
+  tg.ready();
+  tg.expand();
+  telegramInitialized = true;
+}
+
+window.initTelegramWebApp = initTelegramWebApp;
 
 const DEFAULT_SETTINGS = {
   goal: 3000,
@@ -43,8 +64,7 @@ let viewedMonthDate = new Date();
 let cups = loadTodayCups();
 let dropAnimationTimer = null;
 
-tg?.ready();
-tg?.expand();
+initTelegramWebApp();
 
 if (cups > 0 && !history[getTodayKey()]) {
   saveTodayCups();
