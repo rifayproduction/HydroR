@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   </noscript>
   <link rel="preload" as="image" href="assets/hydro-bg-drop.webp" type="image/webp">
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body data-view="today">
   <main class="app-shell">
@@ -29,7 +29,7 @@
     <div class="view-stack">
       <section class="screen-panel screen-today active" data-view-panel="today">
         <div class="drop-stage" aria-label="Прогресс воды за день">
-          <div class="drop-wrap" id="dropWrap">
+          <div class="drop-wrap" id="dropWrap" role="button" tabindex="0" aria-label="Добавить воду">
             <div class="drop">
               <svg class="drop-svg" viewBox="0 0 240 320" aria-hidden="true" focusable="false">
             <defs>
@@ -118,6 +118,11 @@
             <small id="statsMonthSummary">0 дней</small>
           </div>
 
+          <div class="month-total-card" aria-label="Выпито за месяц">
+            <span>За месяц выпито</span>
+            <strong id="monthTotalValue">0 мл</strong>
+          </div>
+
           <div class="calendar-weekdays" aria-hidden="true">
             <span>Пн</span>
             <span>Вт</span>
@@ -133,6 +138,7 @@
             <span id="selectedDayDate">Сегодня</span>
             <strong id="selectedDayAmount">0 / 3000 мл</strong>
             <small id="selectedDayCups">0 кружек</small>
+            <div class="drink-log" id="drinkLog" aria-label="История воды за день"></div>
           </div>
           <div class="month-controls" aria-label="Переключение месяца">
             <button class="month-arrow month-prev" id="prevMonthButton" type="button" aria-label="Предыдущий месяц">&lt;</button>
@@ -157,15 +163,15 @@
           <div class="settings-head">
             <span class="card-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M12 5v14" />
-                <path d="M5 12h14" />
-                <path d="M6.5 6.5c3.2-2.2 7.8-2.2 11 0" />
-                <path d="M6.5 17.5c3.2 2.2 7.8 2.2 11 0" />
+                <path d="M5 7h14" />
+                <path d="M5 17h14" />
+                <path d="M8.5 11.8C9.9 14 12 15.8 12 18a3.5 3.5 0 0 1-7 0c0-2.2 2.1-4 3.5-6.2Z" />
+                <path d="M16.2 3.8C17.3 5.6 19 7.1 19 8.9a2.8 2.8 0 0 1-5.6 0c0-1.8 1.7-3.3 2.8-5.1Z" />
               </svg>
             </span>
             <div>
               <strong>Настройки</strong>
-              <span>Подстрой Hydro под свою кружку</span>
+              <span>Подстрой Hydro под себя</span>
             </div>
           </div>
 
@@ -181,6 +187,14 @@
               <button type="button" data-goal="3000">3 л</button>
               <button type="button" data-goal="3500">3.5 л</button>
             </div>
+            <div class="custom-setting">
+              <label for="customGoalInput">Своя норма</label>
+              <div class="custom-setting-control">
+                <input id="customGoalInput" type="text" inputmode="decimal" autocomplete="off" aria-label="Своя норма в литрах">
+                <span>л</span>
+                <button id="customGoalButton" type="button">OK</button>
+              </div>
+            </div>
           </div>
 
           <div class="setting-group">
@@ -193,6 +207,14 @@
               <button type="button" data-cup-size="250">250</button>
               <button type="button" data-cup-size="300">300</button>
               <button type="button" data-cup-size="500">500</button>
+            </div>
+            <div class="custom-setting">
+              <label for="customCupInput">Своя кружка</label>
+              <div class="custom-setting-control">
+                <input id="customCupInput" type="text" inputmode="numeric" autocomplete="off" aria-label="Своя кружка в миллилитрах">
+                <span>мл</span>
+                <button id="customCupButton" type="button">OK</button>
+              </div>
             </div>
           </div>
 
@@ -230,25 +252,3 @@
               <path d="M12 19V5" />
               <path d="M19 19v-7" />
             </svg>
-          </span>
-          <span>Статистика</span>
-        </button>
-        <button class="wave-tab" type="button" data-view="settings" aria-label="Настройки">
-          <span class="wave-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M5 7h14" />
-              <path d="M5 17h14" />
-              <path d="M8.5 11.8C9.9 14 12 15.8 12 18a3.5 3.5 0 0 1-7 0c0-2.2 2.1-4 3.5-6.2Z" />
-              <path d="M16.2 3.8C17.3 5.6 19 7.1 19 8.9a2.8 2.8 0 0 1-5.6 0c0-1.8 1.7-3.3 2.8-5.1Z" />
-            </svg>
-          </span>
-          <span>Настройки</span>
-        </button>
-      </div>
-    </nav>
-  </main>
-
-  <script src="app.js?v=11"></script>
-  <script async src="https://telegram.org/js/telegram-web-app.js" onload="window.initTelegramWebApp?.()"></script>
-</body>
-</html>
