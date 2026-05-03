@@ -1,5 +1,5 @@
 let tg = window.Telegram?.WebApp || null;
-let telegramInitialized = false;
+let telegramInitialized = false;1
 
 function initTelegramWebApp() {
   const webApp = window.Telegram?.WebApp;
