@@ -60,6 +60,14 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+.drop-stage,
+.progress-copy,
+.cup-dots,
+.drink-controls {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 [hidden] {
   display: none !important;
 }
@@ -337,6 +345,36 @@ h1 {
   white-space: nowrap;
 }
 
+.month-total-card {
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(145, 226, 255, 0.12);
+  border-radius: 21px;
+  background:
+    radial-gradient(circle at 14% 0%, rgba(123, 230, 255, 0.18), transparent 48%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.032)),
+    rgba(3, 16, 25, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 26px rgba(0, 0, 0, 0.14);
+}
+
+.month-total-card span {
+  color: rgba(185, 237, 250, 0.72);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.month-total-card strong {
+  color: #eefdff;
+  font-size: 23px;
+  line-height: 1.1;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .calendar-weekdays,
 .calendar-grid {
   display: grid;
@@ -461,6 +499,47 @@ h1 {
 .selected-day-card small {
   color: var(--muted);
   font-size: 12px;
+  font-weight: 800;
+}
+
+.drink-log {
+  margin-top: 8px;
+  display: grid;
+  gap: 7px;
+}
+
+.drink-log-empty {
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(245, 251, 255, 0.44);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.drink-log-item {
+  min-height: 34px;
+  padding: 6px 9px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid rgba(145, 226, 255, 0.08);
+  border-radius: 15px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.025)),
+    rgba(3, 16, 25, 0.18);
+}
+
+.drink-log-time {
+  color: #bdf2ff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.drink-log-amount {
+  color: rgba(245, 251, 255, 0.7);
+  font-size: 11px;
   font-weight: 800;
 }
 
@@ -626,7 +705,77 @@ body:not([data-view="today"]) .settings-panel {
     0 0 22px rgba(66, 207, 255, 0.26);
 }
 
+.custom-setting {
+  margin-top: 11px;
+  display: grid;
+  gap: 7px;
+}
+
+.custom-setting label {
+  color: rgba(245, 251, 255, 0.52);
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.custom-setting-control {
+  min-height: 42px;
+  padding: 4px 4px 4px 12px;
+  display: grid;
+  grid-template-columns: 1fr auto 44px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(145, 226, 255, 0.12);
+  border-radius: 17px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03)),
+    rgba(3, 16, 25, 0.24);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.custom-setting-control input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #effcff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.custom-setting-control input::placeholder {
+  color: rgba(245, 251, 255, 0.32);
+}
+
+.custom-setting-control input.invalid {
+  color: #ff8e9a;
+}
+
+.custom-setting-control span {
+  color: rgba(185, 237, 250, 0.62);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.custom-setting-control button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 34% 22%, #ecfdff, transparent 28%),
+    linear-gradient(180deg, #73e0ff, #1ca0e2);
+  color: #052033;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.44),
+    0 0 18px rgba(66, 207, 255, 0.18);
+}
+
 .liquid-options button:active,
+.custom-setting-control button:active,
 .reset-day-button:active {
   transform: translateY(1px) scale(0.98);
 }
@@ -664,6 +813,12 @@ body:not([data-view="today"]) .settings-panel {
   display: grid;
   place-items: center;
   filter: drop-shadow(0 24px 36px rgba(20, 163, 226, 0.22));
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.drop-wrap:focus-visible {
+  outline: 0;
 }
 
 .drop-wrap::before,
@@ -1441,6 +1596,19 @@ body:not([data-view="today"]) .settings-panel {
     font-size: 11px;
   }
 
+  .month-total-card {
+    padding: 10px 12px;
+    border-radius: 18px;
+  }
+
+  .month-total-card span {
+    font-size: 11px;
+  }
+
+  .month-total-card strong {
+    font-size: 21px;
+  }
+
   .calendar-weekdays,
   .calendar-grid {
     gap: 5px;
@@ -1517,6 +1685,27 @@ body:not([data-view="today"]) .settings-panel {
     min-height: 38px;
     border-radius: 15px;
     font-size: 12px;
+  }
+
+  .custom-setting {
+    margin-top: 9px;
+    gap: 6px;
+  }
+
+  .custom-setting-control {
+    min-height: 38px;
+    grid-template-columns: 1fr auto 40px;
+    border-radius: 15px;
+  }
+
+  .custom-setting-control input {
+    font-size: 13px;
+  }
+
+  .custom-setting-control button {
+    min-height: 30px;
+    border-radius: 12px;
+    font-size: 11px;
   }
 
   .reset-day-button {
