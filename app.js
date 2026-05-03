@@ -44,13 +44,19 @@ const goalOptions = document.querySelectorAll("[data-goal]");
 const cupSizeOptions = document.querySelectorAll("[data-cup-size]");
 const goalValue = document.getElementById("goalValue");
 const cupValue = document.getElementById("cupValue");
+const customGoalInput = document.getElementById("customGoalInput");
+const customGoalButton = document.getElementById("customGoalButton");
+const customCupInput = document.getElementById("customCupInput");
+const customCupButton = document.getElementById("customCupButton");
 const resetDayButton = document.getElementById("resetDayButton");
 const calendarGrid = document.getElementById("calendarGrid");
 const statsMonthTitle = document.getElementById("statsMonthTitle");
 const statsMonthSummary = document.getElementById("statsMonthSummary");
+const monthTotalValue = document.getElementById("monthTotalValue");
 const selectedDayDate = document.getElementById("selectedDayDate");
 const selectedDayAmount = document.getElementById("selectedDayAmount");
 const selectedDayCups = document.getElementById("selectedDayCups");
+const drinkLog = document.getElementById("drinkLog");
 const prevMonthButton = document.getElementById("prevMonthButton");
 const nextMonthButton = document.getElementById("nextMonthButton");
 const statsPanel = document.querySelector(".stats-panel");
@@ -123,6 +129,24 @@ function getTotalCups() {
   return Math.ceil(settings.goal / settings.cupSize);
 }
 
+function formatLiters(value) {
+  const liters = value / 1000;
+  const decimals = Number.isInteger(liters) ? 0 : Number.isInteger(liters * 10) ? 1 : 2;
+  return `${liters.toFixed(decimals).replace(".", ",")} л`;
+}
+
+function formatGoalInput(value) {
+  const liters = value / 1000;
+  const decimals = Number.isInteger(liters) ? 0 : Number.isInteger(liters * 10) ? 1 : 2;
+  return liters.toFixed(decimals).replace(".", ",");
+}
+
+function parseNumber(value) {
+  const normalized = String(value).replace(",", ".").trim();
+  const number = Number(normalized);
+  return Number.isFinite(number) ? number : null;
+}
+
 function loadTodayCups() {
   const today = getTodayKey();
 
@@ -138,7 +162,20 @@ function loadTodayCups() {
   }
 }
 
-function saveTodayCups() {
+function getTodayRecord() {
+  const today = getTodayKey();
+  const currentRecord = history[today] || {};
+  const entries = Array.isArray(currentRecord.entries) ? currentRecord.entries : [];
+
+  return {
+    cups,
+    goal: settings.goal,
+    cupSize: settings.cupSize,
+    entries,
+  };
+}
+
+function saveTodayCups(entries = getTodayRecord().entries) {
   const today = getTodayKey();
 
   localStorage.setItem(
@@ -153,8 +190,36 @@ function saveTodayCups() {
     cups,
     goal: settings.goal,
     cupSize: settings.cupSize,
+    entries,
   };
   saveHistory();
+}
+
+function getCurrentTimeLabel() {
+  return new Date().toLocaleTimeString("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function addDrinkEntry(amount) {
+  const record = getTodayRecord();
+  const entries = [
+    ...record.entries,
+    {
+      time: getCurrentTimeLabel(),
+      amount,
+    },
+  ];
+
+  saveTodayCups(entries);
+}
+
+function removeLastDrinkEntry() {
+  const record = getTodayRecord();
+  const entries = record.entries.slice(0, Math.max(0, record.entries.length - 1));
+
+  saveTodayCups(entries);
 }
 
 function renderDots() {
@@ -216,8 +281,12 @@ function setView(viewName) {
 }
 
 function renderSettings() {
-  goalValue.textContent = `${settings.goal} мл`;
+  goalValue.textContent = formatLiters(settings.goal);
   cupValue.textContent = `${settings.cupSize} мл`;
+  customGoalInput.value = formatGoalInput(settings.goal);
+  customCupInput.value = settings.cupSize;
+  customGoalInput.classList.remove("invalid");
+  customCupInput.classList.remove("invalid");
 
   goalOptions.forEach((button) => {
     button.classList.toggle("active", Number(button.dataset.goal) === settings.goal);
@@ -230,24 +299,66 @@ function renderSettings() {
   resetDayButton.disabled = cups === 0;
 }
 
+function applyCustomGoal() {
+  const liters = parseNumber(customGoalInput.value);
+  const nextGoal = liters ? Math.round(liters * 1000) : 0;
+
+  if (nextGoal < 500 || nextGoal > 8000) {
+    customGoalInput.classList.add("invalid");
+    return;
+  }
+
+  settings.goal = nextGoal;
+  cups = Math.min(cups, getTotalCups());
+  saveSettings();
+  saveTodayCups();
+  render();
+  tg?.HapticFeedback?.impactOccurred("light");
+}
+
+function applyCustomCupSize() {
+  const nextCupSize = Math.round(parseNumber(customCupInput.value) || 0);
+
+  if (nextCupSize < 50 || nextCupSize > 2000) {
+    customCupInput.classList.add("invalid");
+    return;
+  }
+
+  settings.cupSize = nextCupSize;
+  cups = Math.min(cups, getTotalCups());
+  saveSettings();
+  saveTodayCups();
+  render();
+  tg?.HapticFeedback?.impactOccurred("light");
+}
+
 function getDayRecord(dateKey) {
   if (dateKey === getTodayKey()) {
-    return {
-      cups,
-      goal: settings.goal,
-      cupSize: settings.cupSize,
-    };
+    return getTodayRecord();
   }
 
   return history[dateKey] || {
     cups: 0,
     goal: settings.goal,
     cupSize: settings.cupSize,
+    entries: [],
   };
 }
 
 function getDayAmount(record) {
   return Math.min((Number(record.cups) || 0) * (Number(record.cupSize) || settings.cupSize), Number(record.goal) || settings.goal);
+}
+
+function formatAmount(value) {
+  const rounded = Math.round(value);
+
+  if (rounded >= 1000) {
+    const liters = rounded / 1000;
+    const decimals = Number.isInteger(liters) ? 0 : Number.isInteger(liters * 10) ? 1 : 2;
+    return `${liters.toFixed(decimals).replace(".", ",")} л`;
+  }
+
+  return `${rounded} мл`;
 }
 
 function isBeforeStatsStart(date) {
@@ -320,10 +431,23 @@ function renderSelectedDay() {
   const goal = Number(record.goal) || settings.goal;
   const cupSize = Number(record.cupSize) || settings.cupSize;
   const totalCups = Math.ceil(goal / cupSize);
+  const entries = Array.isArray(record.entries) ? record.entries : [];
 
   selectedDayDate.textContent = formatDayTitle(selectedStatsDate);
   selectedDayAmount.textContent = `${amount} / ${goal} мл`;
   selectedDayCups.textContent = `${Number(record.cups) || 0} из ${totalCups} кружек`;
+  drinkLog.innerHTML = entries.length
+    ? entries
+        .slice()
+        .reverse()
+        .map((entry) => `
+          <div class="drink-log-item">
+            <span class="drink-log-time">${entry.time}</span>
+            <span class="drink-log-amount">+${entry.amount} мл</span>
+          </div>
+        `)
+        .join("")
+    : '<div class="drink-log-empty">Пока нет записей за день</div>';
 }
 
 function renderStats() {
@@ -334,6 +458,7 @@ function renderStats() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const leadingEmptyDays = (firstDay.getDay() + 6) % 7;
   let completeDays = 0;
+  let totalAmount = 0;
 
   statsMonthTitle.textContent = formatMonthTitle(viewedMonthDate);
   prevMonthButton.disabled =
@@ -360,6 +485,10 @@ function renderStats() {
       completeDays += 1;
     }
 
+    if (amount > 0) {
+      totalAmount += amount;
+    }
+
     const button = document.createElement("button");
     button.className = "calendar-day";
     button.type = "button";
@@ -382,6 +511,7 @@ function renderStats() {
   }
 
   statsMonthSummary.textContent = `${completeDays} дней в норме`;
+  monthTotalValue.textContent = formatAmount(totalAmount);
   renderSelectedDay();
 }
 
@@ -433,7 +563,7 @@ function render() {
   renderStreak();
 }
 
-addCupButton.addEventListener("click", () => {
+function addCup() {
   if (cups >= getTotalCups()) {
     tg?.HapticFeedback?.notificationOccurred("success");
     animateDrop();
@@ -441,15 +571,26 @@ addCupButton.addEventListener("click", () => {
   }
 
   cups += 1;
-  saveTodayCups();
+  addDrinkEntry(settings.cupSize);
   render();
   animateDrop();
   tg?.HapticFeedback?.impactOccurred("light");
+}
+
+addCupButton.addEventListener("click", addCup);
+
+dropWrap.addEventListener("click", addCup);
+
+dropWrap.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    addCup();
+  }
 });
 
 undoButton.addEventListener("click", () => {
   cups = Math.max(0, cups - 1);
-  saveTodayCups();
+  removeLastDrinkEntry();
   render();
   tg?.HapticFeedback?.impactOccurred("soft");
 });
@@ -482,9 +623,35 @@ cupSizeOptions.forEach((button) => {
   });
 });
 
+customGoalButton.addEventListener("click", applyCustomGoal);
+
+customGoalInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    customGoalInput.blur();
+    applyCustomGoal();
+  }
+});
+
+customGoalInput.addEventListener("input", () => {
+  customGoalInput.classList.remove("invalid");
+});
+
+customCupButton.addEventListener("click", applyCustomCupSize);
+
+customCupInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    customCupInput.blur();
+    applyCustomCupSize();
+  }
+});
+
+customCupInput.addEventListener("input", () => {
+  customCupInput.classList.remove("invalid");
+});
+
 resetDayButton.addEventListener("click", () => {
   cups = 0;
-  saveTodayCups();
+  saveTodayCups([]);
   render();
   tg?.HapticFeedback?.impactOccurred("soft");
 });
