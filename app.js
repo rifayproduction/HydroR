@@ -3,7 +3,7 @@ let telegramInitialized = false;
 
 function initTelegramWebApp() {
   const webApp = window.Telegram?.WebApp;
-
+1
   if (!webApp) {
     return;
   }
