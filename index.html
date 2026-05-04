@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   </noscript>
   <link rel="preload" as="image" href="assets/hydro-bg-drop.webp" type="image/webp">
-  <link rel="stylesheet" href="styles.css?v=17">
+  <link rel="stylesheet" href="styles.css?v=22">
 </head>
 <body data-view="today">
   <main class="app-shell">
@@ -21,6 +21,14 @@
       </span>
       <strong id="streakCount">0</strong>
     </button>
+
+    <div class="achievement-toast" id="achievementToast" role="status" aria-live="polite" aria-hidden="true">
+      <span class="achievement-toast-icon" aria-hidden="true"></span>
+      <div>
+        <span>Достижение выполнено</span>
+        <strong id="achievementToastTitle">Первая капля</strong>
+      </div>
+    </div>
 
     <section class="hero">
       <h1 class="brand-title">Hydro</h1>
@@ -93,8 +101,12 @@
           </div>
 
           <div class="progress-copy">
+            <span class="progress-kicker">Сегодня</span>
             <strong id="waterAmount">0 / 3000 мл</strong>
-            <span id="statusText">Начнем спокойно</span>
+            <div class="progress-meter" aria-hidden="true">
+              <span id="progressFill"></span>
+            </div>
+            <span id="statusText" hidden>Цель выполнена</span>
           </div>
 
           <div class="cup-dots" id="cupDots" aria-label="Кружки за день"></div>
@@ -104,6 +116,13 @@
               <strong>+300 мл</strong>
               <span>Добавить кружку</span>
             </button>
+          </div>
+          <div class="today-log-card" aria-label="Последние кружки">
+            <div class="today-log-head">
+              <span>История дня</span>
+              <strong id="todayLogSummary">Пока пусто</strong>
+            </div>
+            <div class="today-log-list" id="todayLogList"></div>
           </div>
         </div>
       </section>
@@ -155,6 +174,30 @@
           </span>
           <strong>Статистика</strong>
           <span>Здесь будет календарь с каплями по дням</span>
+        </div>
+      </section>
+
+      <section class="screen-panel screen-achievements" data-view-panel="achievements" hidden>
+        <div class="achievements-panel">
+          <div class="achievements-head">
+            <span class="card-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M8 4h8" />
+                <path d="M7 4v5a5 5 0 0 0 10 0V4" />
+                <path d="M7 7H4.8a2.1 2.1 0 0 0 0 4.2H7" />
+                <path d="M17 7h2.2a2.1 2.1 0 0 1 0 4.2H17" />
+                <path d="M12 14v4" />
+                <path d="M9 20h6" />
+              </svg>
+            </span>
+            <div>
+              <strong>Достижения</strong>
+              <span>Собирай свой водный ритм</span>
+            </div>
+            <small id="achievementsSummary">0 из 8</small>
+          </div>
+
+          <div class="achievements-grid" id="achievementsGrid"></div>
         </div>
       </section>
 
@@ -255,6 +298,19 @@
           </span>
           <span>Статистика</span>
         </button>
+        <button class="wave-tab" type="button" data-view="achievements" aria-label="Достижения">
+          <span class="wave-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M8 4h8" />
+              <path d="M7 4v5a5 5 0 0 0 10 0V4" />
+              <path d="M7 7H4.8a2.1 2.1 0 0 0 0 4.2H7" />
+              <path d="M17 7h2.2a2.1 2.1 0 0 1 0 4.2H17" />
+              <path d="M12 14v4" />
+              <path d="M9 20h6" />
+            </svg>
+          </span>
+          <span>Достижения</span>
+        </button>
         <button class="wave-tab" type="button" data-view="settings" aria-label="Настройки">
           <span class="wave-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false">
@@ -270,7 +326,7 @@
     </nav>
   </main>
 
-  <script src="app.js?v=17"></script>
+  <script src="app.js?v=22"></script>
   <script async src="https://telegram.org/js/telegram-web-app.js" onload="window.initTelegramWebApp?.()"></script>
 </body>
 </html>
