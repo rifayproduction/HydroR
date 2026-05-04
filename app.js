@@ -29,12 +29,15 @@ const MIN_STATS_MONTH = new Date(2026, 3, 1);
 const STORAGE_KEY = "waterTrackerToday";
 const SETTINGS_STORAGE_KEY = "waterTrackerSettings";
 const HISTORY_STORAGE_KEY = "waterTrackerHistory";
+const ACHIEVEMENTS_STORAGE_KEY = "waterTrackerAchievements";
 
 const waterLevel = document.getElementById("waterLevel");
 const dropWrap = document.getElementById("dropWrap");
 const cupsCount = document.getElementById("cupsCount");
+const progressCopy = document.querySelector(".progress-copy");
 const waterAmount = document.getElementById("waterAmount");
 const statusText = document.getElementById("statusText");
+const progressFill = document.getElementById("progressFill");
 const cupDots = document.getElementById("cupDots");
 const addCupButton = document.getElementById("addCupButton");
 const undoButton = document.getElementById("undoButton");
@@ -57,11 +60,17 @@ const selectedDayDate = document.getElementById("selectedDayDate");
 const selectedDayAmount = document.getElementById("selectedDayAmount");
 const selectedDayCups = document.getElementById("selectedDayCups");
 const drinkLog = document.getElementById("drinkLog");
+const todayLogSummary = document.getElementById("todayLogSummary");
+const todayLogList = document.getElementById("todayLogList");
 const prevMonthButton = document.getElementById("prevMonthButton");
 const nextMonthButton = document.getElementById("nextMonthButton");
 const statsPanel = document.querySelector(".stats-panel");
 const streakBadge = document.getElementById("streakBadge");
 const streakCount = document.getElementById("streakCount");
+const achievementsSummary = document.getElementById("achievementsSummary");
+const achievementsGrid = document.getElementById("achievementsGrid");
+const achievementToast = document.getElementById("achievementToast");
+const achievementToastTitle = document.getElementById("achievementToastTitle");
 
 let settings = loadSettings();
 let history = loadHistory();
@@ -69,6 +78,10 @@ let selectedStatsDate = getTodayKey();
 let viewedMonthDate = new Date();
 let cups = loadTodayCups();
 let dropAnimationTimer = null;
+let knownAchievementIds = loadKnownAchievementIds();
+let achievementTrackingReady = false;
+let achievementToastQueue = [];
+let achievementToastTimer = null;
 
 initTelegramWebApp();
 
@@ -123,6 +136,19 @@ function loadHistory() {
 
 function saveHistory() {
   localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+}
+
+function loadKnownAchievementIds() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ACHIEVEMENTS_STORAGE_KEY) || "[]");
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveKnownAchievementIds() {
+  localStorage.setItem(ACHIEVEMENTS_STORAGE_KEY, JSON.stringify(knownAchievementIds));
 }
 
 function getTotalCups() {
@@ -361,6 +387,77 @@ function formatAmount(value) {
   return `${rounded} мл`;
 }
 
+function formatCupWord(value) {
+  const absoluteValue = Math.abs(value) % 100;
+  const lastDigit = absoluteValue % 10;
+
+  if (absoluteValue > 10 && absoluteValue < 20) {
+    return "кружек";
+  }
+
+  if (lastDigit === 1) {
+    return "кружка";
+  }
+
+  if (lastDigit > 1 && lastDigit < 5) {
+    return "кружки";
+  }
+
+  return "кружек";
+}
+
+function getAllRecords() {
+  return {
+    ...history,
+    [getTodayKey()]: getTodayRecord(),
+  };
+}
+
+function getRecordAmount(record) {
+  return (Number(record.cups) || 0) * (Number(record.cupSize) || settings.cupSize);
+}
+
+function getAchievementProgress(value, target) {
+  return Math.min(100, Math.round((Math.min(value, target) / target) * 100));
+}
+
+function showNextAchievementToast() {
+  if (!achievementToastQueue.length) {
+    return;
+  }
+
+  const title = achievementToastQueue.shift();
+
+  window.clearTimeout(achievementToastTimer);
+  achievementToastTitle.textContent = title;
+  achievementToast.setAttribute("aria-hidden", "false");
+  achievementToast.classList.remove("show");
+  void achievementToast.offsetWidth;
+  achievementToast.classList.add("show");
+
+  achievementToastTimer = window.setTimeout(() => {
+    achievementToast.classList.remove("show");
+    achievementToast.setAttribute("aria-hidden", "true");
+
+    if (achievementToastQueue.length) {
+      achievementToastTimer = window.setTimeout(showNextAchievementToast, 260);
+    }
+  }, 2600);
+}
+
+function queueAchievementToast(title) {
+  achievementToastQueue.push(title);
+
+  if (!achievementToast.classList.contains("show")) {
+    showNextAchievementToast();
+  }
+}
+
+function isEarlyEntry(entry) {
+  const hour = Number(String(entry.time || "").split(":")[0]);
+  return Number.isFinite(hour) && hour < 10;
+}
+
 function isBeforeStatsStart(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate()) < MIN_STATS_MONTH;
 }
@@ -448,6 +545,201 @@ function renderSelectedDay() {
         `)
         .join("")
     : '<div class="drink-log-empty">Пока нет записей за день</div>';
+}
+
+function renderTodayLog() {
+  const record = getTodayRecord();
+  const entries = Array.isArray(record.entries) ? record.entries : [];
+  const totalCups = getTotalCups();
+
+  todayLogSummary.textContent = entries.length
+    ? `${cups} из ${totalCups} ${formatCupWord(totalCups)}`
+    : "Пока пусто";
+
+  todayLogList.innerHTML = entries.length
+    ? entries
+        .slice(-3)
+        .reverse()
+        .map((entry) => `
+          <div class="today-log-pill">
+            <span>${entry.time}</span>
+            <strong>+${entry.amount} мл</strong>
+          </div>
+        `)
+        .join("")
+    : '<div class="today-log-empty">Нажми +, когда выпьешь воду</div>';
+}
+
+function getAchievements() {
+  const records = Object.values(getAllRecords());
+  const streak = getStreakInfo().days;
+  const totalCups = records.reduce((sum, record) => sum + (Number(record.cups) || 0), 0);
+  const totalAmount = records.reduce((sum, record) => sum + getRecordAmount(record), 0);
+  const completedDays = records.filter((record) => {
+    const goal = Number(record.goal) || settings.goal;
+    return getDayAmount(record) >= goal;
+  }).length;
+  const bestCups = records.reduce((best, record) => Math.max(best, Number(record.cups) || 0), 0);
+  const hasEarlyDrink = records.some((record) => {
+    const entries = Array.isArray(record.entries) ? record.entries : [];
+    return entries.some(isEarlyEntry);
+  });
+
+  return [
+    {
+      id: "first-drop",
+      title: "Первая капля",
+      description: "Выпей первую кружку воды",
+      rarity: "обычное",
+      rarityTone: "common",
+      icon: "drop",
+      value: totalCups,
+      target: 1,
+      label: `${Math.min(totalCups, 1)} / 1`,
+    },
+    {
+      id: "day-complete",
+      title: "День закрыт",
+      description: "Выполни норму дня",
+      rarity: "обычное",
+      rarityTone: "common",
+      icon: "check",
+      value: completedDays,
+      target: 1,
+      label: `${Math.min(completedDays, 1)} / 1`,
+    },
+    {
+      id: "clean-rhythm",
+      title: "Чистый ритм",
+      description: "Пей воду 3 дня подряд",
+      rarity: "редкое",
+      rarityTone: "rare",
+      icon: "wave",
+      value: streak,
+      target: 3,
+      label: `${Math.min(streak, 3)} / 3 дня`,
+    },
+    {
+      id: "hydro-week",
+      title: "Неделя Hydro",
+      description: "Держи серию 7 дней",
+      rarity: "эпическое",
+      rarityTone: "epic",
+      icon: "calendar",
+      value: streak,
+      target: 7,
+      label: `${Math.min(streak, 7)} / 7 дней`,
+    },
+    {
+      id: "ten-liters",
+      title: "10 литров",
+      description: "Выпей 10 литров всего",
+      rarity: "редкое",
+      rarityTone: "rare",
+      icon: "liter",
+      value: totalAmount,
+      target: 10000,
+      label: `${formatAmount(Math.min(totalAmount, 10000))} / 10 л`,
+    },
+    {
+      id: "thirty-liters",
+      title: "30 литров",
+      description: "Выпей 30 литров всего",
+      rarity: "эпическое",
+      rarityTone: "epic",
+      icon: "ocean",
+      value: totalAmount,
+      target: 30000,
+      label: `${formatAmount(Math.min(totalAmount, 30000))} / 30 л`,
+    },
+    {
+      id: "early-sip",
+      title: "Ранний глоток",
+      description: "Добавь воду до 10:00",
+      rarity: "обычное",
+      rarityTone: "common",
+      icon: "sun",
+      value: hasEarlyDrink ? 1 : 0,
+      target: 1,
+      label: hasEarlyDrink ? "получено" : "0 / 1",
+    },
+    {
+      id: "full-drop",
+      title: "Полная капля",
+      description: "Выпей 10 кружек за день",
+      rarity: "редкое",
+      rarityTone: "rare",
+      icon: "full",
+      value: bestCups,
+      target: 10,
+      label: `${Math.min(bestCups, 10)} / 10 кружек`,
+    },
+  ];
+}
+
+function syncAchievementUnlocks(achievements) {
+  const currentUnlockedIds = achievements
+    .filter((achievement) => achievement.value >= achievement.target)
+    .map((achievement) => achievement.id);
+
+  if (!achievementTrackingReady) {
+    knownAchievementIds = Array.from(new Set([...knownAchievementIds, ...currentUnlockedIds]));
+    saveKnownAchievementIds();
+    achievementTrackingReady = true;
+    return;
+  }
+
+  const newUnlockedIds = currentUnlockedIds.filter((id) => !knownAchievementIds.includes(id));
+
+  if (!newUnlockedIds.length) {
+    return;
+  }
+
+  knownAchievementIds = Array.from(new Set([...knownAchievementIds, ...newUnlockedIds]));
+  saveKnownAchievementIds();
+
+  newUnlockedIds.forEach((id) => {
+    const achievement = achievements.find((item) => item.id === id);
+
+    if (achievement) {
+      queueAchievementToast(achievement.title);
+    }
+  });
+
+  tg?.HapticFeedback?.notificationOccurred("success");
+}
+
+function isAchievementUnlocked(achievement) {
+  return achievement.value >= achievement.target || knownAchievementIds.includes(achievement.id);
+}
+
+function renderAchievements() {
+  const achievements = getAchievements();
+  syncAchievementUnlocks(achievements);
+
+  const unlockedCount = achievements.filter(isAchievementUnlocked).length;
+
+  achievementsSummary.textContent = `${unlockedCount} из ${achievements.length}`;
+  achievementsGrid.innerHTML = achievements
+    .map((achievement) => {
+      const unlocked = isAchievementUnlocked(achievement);
+      const progress = unlocked ? 100 : getAchievementProgress(achievement.value, achievement.target);
+
+      return `
+        <article class="achievement-card ${unlocked ? "unlocked" : "locked"} ${achievement.rarityTone}">
+          <div class="achievement-top">
+            <span class="achievement-icon achievement-icon-${achievement.icon}" aria-hidden="true"></span>
+          </div>
+          <strong>${achievement.title}</strong>
+          <p>${achievement.description}</p>
+          <div class="achievement-progress">
+            <span style="width: ${progress}%"></span>
+          </div>
+          <small>${achievement.label}</small>
+        </article>
+      `;
+    })
+    .join("");
 }
 
 function renderStats() {
@@ -548,7 +840,10 @@ function render() {
   waterLevel.style.transform = `translateY(${fillOffset}px)`;
   cupsCount.textContent = `${cups} из ${totalCups}`;
   waterAmount.textContent = `${amount} / ${settings.goal} мл`;
-  statusText.textContent = `${cups} из ${totalCups} кружек`;
+  progressFill.style.width = `${progress}%`;
+  progressCopy.classList.toggle("complete", amount >= settings.goal);
+  statusText.hidden = amount < settings.goal;
+  statusText.textContent = amount >= settings.goal ? "Цель выполнена" : "";
   undoButton.disabled = cups === 0;
   undoButton.setAttribute("aria-label", `Убрать ${settings.cupSize} мл`);
   addCupButton.innerHTML =
@@ -561,6 +856,8 @@ function render() {
   renderSettings();
   renderStats();
   renderStreak();
+  renderTodayLog();
+  renderAchievements();
 }
 
 function addCup() {
